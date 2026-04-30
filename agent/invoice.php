@@ -92,7 +92,7 @@ if (isset($_GET['invoice_id'])) {
     $company_website = nullable_htmlentities($row['company_website']);
     $company_tax_id = nullable_htmlentities($row['company_tax_id']);
     if ($config_invoice_show_tax_id && !empty($company_tax_id)) {
-        $company_tax_id_display = "Tax ID: $company_tax_id";
+        $company_tax_id_display = "VAT ID: $company_tax_id";
     } else {
         $company_tax_id_display = "";
     }
@@ -387,7 +387,7 @@ if (isset($_GET['invoice_id'])) {
                                     <th>Description</th>
                                     <th class="text-center">Qty</th>
                                     <th class="text-right">Unit Price</th>
-                                    <th class="text-right">Tax</th>
+                                    <th class="text-right">VAT</th>
                                     <th class="text-right">Amount</th>
                                 </tr>
                                 </thead>
@@ -541,7 +541,7 @@ if (isset($_GET['invoice_id'])) {
                         ?>
                         <?php if ($total_tax > 0) { ?>
                             <tr>
-                                <td>Tax:</td>
+                                <td>VAT:</td>
                                 <td class="text-right"><?php echo numfmt_format_currency($currency_format, $total_tax, $invoice_currency_code); ?></td>
                             </tr>
                         <?php } ?>
@@ -785,7 +785,7 @@ $(function() {
                     "</div>" +
                     "<div class='small text-muted'>" + (item.description || "") + "</div>" +
                     "<div class='mt-1'>" +
-                        "<span class='badge badge-secondary mr-1'>Tax: " + taxText + "</span>" +
+                        "<span class='badge badge-secondary mr-1'>VAT: " + taxText + "</span>" +
                         (showStock ? "<span class='badge " + ((item.available_stock ?? 0) > 0 ? "badge-success" : "badge-danger") + "'>Stock: " + (item.available_stock ?? 0) + "</span>" : "") +
                     "</div>" +
                 "</div>" +
