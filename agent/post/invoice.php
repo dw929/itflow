@@ -869,119 +869,184 @@ if (isset($_GET['export_invoice_pdf'])) {
     $pdf->AddPage();
     $pdf->SetFont('helvetica', '', 10);
 
-    // Logo + Right Columns
-    $html = '<table width="100%" cellspacing="0" cellpadding="3">
-    <tr>
-        <td width="40%">';
-    if (!empty($company_logo) && file_exists("../uploads/settings/$company_logo")) {
-        $html .= '<img src="/uploads/settings/' . $company_logo . '" width="120">';
-    }
-    $html .= '</td>
-        <td width="60%" align="right">
-            <span style="font-size:18pt; font-weight:bold;">Invoice</span><br>
-            <span style="font-size:14pt;">' . $invoice_prefix . $invoice_number . '</span><br>';
-    if (strtolower($invoice_status) === 'paid') {
-        $html .= '<span style="color:green; font-weight:bold;">PAID</span><br>';
-    }
-    $html .= '</td>
-    </tr>
-    </table><br>';
+    // ---------- PREP DISPLAY VARIABLES ----------
+$company_block = nl2br("
+$company_address
+$company_city $company_state $company_zip
+$company_country
+$company_phone
+$company_website
+$company_tax_id_display
+");
 
-    // Billing titles
-    $html .= '<table width="100%" cellspacing="0" cellpadding="2">
-    <tr>
-        <td width="50%" style="font-size:14pt; font-weight:bold;">' . $company_name . '</td>
-        <td width="50%" align="right" style="font-size:14pt; font-weight:bold;">' . $client_name . '</td>
-    </tr>
-    <tr>
-        <td style="font-size:10pt; line-height:1.4;">' . nl2br("$company_address\n$company_city $company_state $company_zip\n$company_country\n$company_phone\n$company_website\n$company_tax_id_display") . '</td>
-        <td style="font-size:10pt; line-height:1.4;" align="right">' . nl2br("$location_address\n$location_city $location_state $location_zip\n$location_country\n$contact_email\n$contact_phone") . '</td>
-    </tr>
-    </table><br>';
+$client_block = nl2br("
+$location_address
+$location_city $location_state $location_zip
+$location_country
+$contact_email
+$contact_phone
+");
 
-    // Date table
-    $html .= '<table border="0" cellpadding="2" cellspacing="0" width="100%">
-    <tr>
-        <td width="60%"></td>
-        <td width="20%" style="font-size:10pt;"><strong>Date:</strong></td>
-        <td width="20%" style="font-size:10pt;" align="right">' . $invoice_date . '</td>
-    </tr>
-    <tr>
-        <td></td>
-        <td style="font-size:10pt;"><strong>Due:</strong></td>
-        <td style="font-size:10pt;" align="right">' . $invoice_due . '</td>
-    </tr>
-    </table><br><br>';
+// ---------- HEADER ----------
+$html = <<<HTML
+<table width="100%" cellspacing="0" cellpadding="3">
+<tr>
+    <td width="40%">
+HTML;
 
-    // Items header
-    $html .= '
-    <table border="0" cellpadding="5" cellspacing="0" width="100%">
-    <tr style="background-color:#f0f0f0;">
-        <th align="left" width="40%"><strong>Item</strong></th>
-        <th align="center" width="10%"><strong>Qty</strong></th>
-        <th align="right" width="15%"><strong>Price</strong></th>
-        <th align="right" width="15%"><strong> . '$tax_wording' . </strong></th>
-        <th align="right" width="20%"><strong>Amount</strong></th>
-    </tr>';
+if (!empty($company_logo) && file_exists("../uploads/settings/$company_logo")) {
+    $html .= "<img src=\"/uploads/settings/$company_logo\" width=\"120\">";
+}
 
-    // Load items
-    $sub_total = 0;
-    $total_tax = 0;
+$html .= <<<HTML
+    </td>
+    <td width="60%" align="right">
+        <span style="font-size:18pt; font-weight:bold;">Invoice</span><br>
+        <span style="font-size:14pt;">{$invoice_prefix}{$invoice_number}</span><br>
+HTML;
 
-    $sql_items = mysqli_query($mysqli, "SELECT * FROM invoice_items WHERE item_invoice_id = $invoice_id ORDER BY item_order ASC");
-    while ($item = mysqli_fetch_assoc($sql_items)) {
-        $name = $item['item_name'];
-        $desc = $item['item_description'];
-        $qty = $item['item_quantity'];
-        $price = $item['item_price'];
-        $tax = $item['item_tax'];
-        $total = $item['item_total'];
+if (strtolower($invoice_status) === 'paid') {
+    $html .= '<span style="color:green; font-weight:bold;">PAID</span><br>';
+}
 
-        $sub_total += $price * $qty;
-        $total_tax += $tax;
+$html .= <<<HTML
+    </td>
+</tr>
+</table><br>
+HTML;
 
-        $html .= '
-        <tr>
-            <td><strong>' . $name . '</strong>
-            <br><span style="font-style:italic; font-size:9pt;">' . nl2br($desc) . '</span>
-            </td>
-            <td align="center">' . number_format($qty, 2) . '</td>
-            <td align="right">' . numfmt_format_currency($currency_format, $price, $invoice_currency_code) . '</td>
-            <td align="right">' . numfmt_format_currency($currency_format, $tax, $invoice_currency_code) . '</td>
-            <td align="right">' . numfmt_format_currency($currency_format, $total, $invoice_currency_code) . '</td>
-        </tr>';
-    }
+// ---------- COMPANY / CLIENT ----------
+$html .= <<<HTML
+<table width="100%" cellspacing="0" cellpadding="2">
+<tr>
+    <td width="50%" style="font-size:14pt; font-weight:bold;">{$company_name}</td>
+    <td width="50%" align="right" style="font-size:14pt; font-weight:bold;">{$client_name}</td>
+</tr>
+<tr>
+    <td style="font-size:10pt; line-height:1.4;">{$company_block}</td>
+    <td style="font-size:10pt; line-height:1.4;" align="right">{$client_block}</td>
+</tr>
+</table><br>
+HTML;
 
-    $html .= '</table><br><hr><br><br>';
+// ---------- DATES ----------
+$html .= <<<HTML
+<table width="100%" cellpadding="2">
+<tr>
+    <td width="60%"></td>
+    <td width="20%"><strong>Date:</strong></td>
+    <td width="20%" align="right">{$invoice_date}</td>
+</tr>
+<tr>
+    <td></td>
+    <td><strong>Due:</strong></td>
+    <td align="right">{$invoice_due}</td>
+</tr>
+</table><br><br>
+HTML;
 
-    // Totals
-    $html .= '<table width="100%" cellspacing="0" cellpadding="4">
-    <tr>
-        <td width="60%"><i style="font-size:9pt;">' . nl2br($invoice_note) . '</i></td>
-        <td width="40%">
-            <table width="100%" cellpadding="3" cellspacing="0">
-                <tr><td>Subtotal:</td><td align="right">' . numfmt_format_currency($currency_format, $sub_total, $invoice_currency_code) . '</td></tr>';
-    if ($invoice_discount > 0) {
-        $html .= '<tr><td>Discount:</td><td align="right">-' . numfmt_format_currency($currency_format, $invoice_discount, $invoice_currency_code) . '</td></tr>';
-    }
-    if ($total_tax > 0) {
-        $html .= '<tr><td>Tax:</td><td align="right">' . numfmt_format_currency($currency_format, $total_tax, $invoice_currency_code) . '</td></tr>';
-    }
-    $html .= '
-    <tr><td>Total:</td><td align="right">' . numfmt_format_currency($currency_format, $invoice_amount, $invoice_currency_code) . '</td></tr>';
-    if ($amount_paid > 0) {
-        $html .= '<tr><td>Paid:</td><td align="right">' . numfmt_format_currency($currency_format, $amount_paid, $invoice_currency_code) . '</td></tr>';
-    }
-    $html .= '
-    <tr><td><h3><strong>Balance:</strong></h3></td><td align="right"><h3><strong>' . numfmt_format_currency($currency_format, $balance, $invoice_currency_code) . '</strong></h3></td></tr>
-    </table>
-        </td>
-    </tr>
-    </table><br><br>';
+// ---------- ITEMS HEADER ----------
+$html .= <<<HTML
+<table cellpadding="5" cellspacing="0" width="100%">
+<tr style="background-color:#f0f0f0;">
+    <th align="left" width="40%">Item</th>
+    <th align="center" width="10%">Qty</th>
+    <th align="right" width="15%">Price</th>
+    <th align="right" width="15%">{$tax_wording}</th>
+    <th align="right" width="20%">Amount</th>
+</tr>
+HTML;
 
-    // Footer
-    $html .= '<div style="text-align:center; font-size:9pt; color:gray;">' . nl2br($config_invoice_footer) . '</div>';
+// ---------- ITEMS ----------
+$sub_total = 0;
+$total_tax = 0;
 
+$sql_items = mysqli_query($mysqli, "SELECT * FROM invoice_items WHERE item_invoice_id = $invoice_id ORDER BY item_order ASC");
+
+while ($item = mysqli_fetch_assoc($sql_items)) {
+
+    $name  = htmlspecialchars($item['item_name']);
+    $desc  = nl2br(htmlspecialchars($item['item_description']));
+    $qty   = floatval($item['item_quantity']);
+    $price = floatval($item['item_price']);
+    $tax   = floatval($item['item_tax']);
+    $total = floatval($item['item_total']);
+
+    $sub_total += $price * $qty;
+    $total_tax += $tax;
+
+    $price_f = numfmt_format_currency($currency_format, $price, $invoice_currency_code);
+    $tax_f   = numfmt_format_currency($currency_format, $tax, $invoice_currency_code);
+    $total_f = numfmt_format_currency($currency_format, $total, $invoice_currency_code);
+
+    $html .= <<<HTML
+<tr>
+    <td>
+        <strong>{$name}</strong><br>
+        <span style="font-style:italic; font-size:9pt;">{$desc}</span>
+    </td>
+    <td align="center">{$qty}</td>
+    <td align="right">{$price_f}</td>
+    <td align="right">{$tax_f}</td>
+    <td align="right">{$total_f}</td>
+</tr>
+HTML;
+}
+
+$html .= "</table><br><hr><br>";
+
+// ---------- TOTALS ----------
+$subtotal_f = numfmt_format_currency($currency_format, $sub_total, $invoice_currency_code);
+$total_f    = numfmt_format_currency($currency_format, $invoice_amount, $invoice_currency_code);
+$balance_f  = numfmt_format_currency($currency_format, $balance, $invoice_currency_code);
+
+$html .= <<<HTML
+<table width="100%" cellpadding="4">
+<tr>
+    <td width="60%">
+        <i style="font-size:9pt;">{$invoice_note}</i>
+    </td>
+    <td width="40%">
+        <table width="100%">
+            <tr><td>Subtotal:</td><td align="right">{$subtotal_f}</td></tr>
+HTML;
+
+if ($invoice_discount > 0) {
+    $discount_f = numfmt_format_currency($currency_format, $invoice_discount, $invoice_currency_code);
+    $html .= "<tr><td>Discount:</td><td align=\"right\">-{$discount_f}</td></tr>";
+}
+
+if ($total_tax > 0) {
+    $tax_total_f = numfmt_format_currency($currency_format, $total_tax, $invoice_currency_code);
+    $html .= "<tr><td>$tax_wording</td><td align=\"right\">{$tax_total_f}</td></tr>";
+}
+
+$html .= <<<HTML
+<tr><td>Total:</td><td align="right">{$total_f}</td></tr>
+HTML;
+
+if ($amount_paid > 0) {
+    $paid_f = numfmt_format_currency($currency_format, $amount_paid, $invoice_currency_code);
+    $html .= "<tr><td>Paid:</td><td align=\"right\">{$paid_f}</td></tr>";
+}
+
+$html .= <<<HTML
+<tr>
+    <td><strong>Balance:</strong></td>
+    <td align="right"><strong>{$balance_f}</strong></td>
+</tr>
+</table>
+</td>
+</tr>
+</table><br><br>
+HTML;
+
+// ---------- FOOTER ----------
+$html .= <<<HTML
+<div style="text-align:center; font-size:9pt; color:gray;">
+{$config_invoice_footer}
+</div>
+HTML;
     $pdf->writeHTML($html, true, false, true, false, '');
 
     $filename = preg_replace('/[^A-Za-z0-9_\-]/', '_', "{$invoice_date}_{$company_name}_{$client_name}_Invoice_{$invoice_prefix}{$invoice_number}");
