@@ -9,10 +9,15 @@ if (isset($_POST['edit_localization'])) {
     $locale = sanitizeInput($_POST['locale']);
     $currency_code = sanitizeInput($_POST['currency_code']);
     $timezone = sanitizeInput($_POST['timezone']);
+    $tax_wording = sanitizeInput($_POST['tax_wording']);
+
+
 
     mysqli_query($mysqli,"UPDATE companies SET company_locale = '$locale', company_currency = '$currency_code' WHERE company_id = 1");
 
     mysqli_query($mysqli,"UPDATE settings SET config_timezone = '$timezone' WHERE company_id = 1");
+
+    mysqli_query($mysqli,"UPDATE companies SET tax_wording = '$tax_wording' WHERE company_id = 1");
 
     logAction("Settings", "Edit", "$session_name edited localization settings");
 
