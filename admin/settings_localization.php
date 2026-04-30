@@ -7,6 +7,7 @@ $sql = mysqli_query($mysqli,"SELECT * FROM companies, settings WHERE companies.c
 $row = mysqli_fetch_assoc($sql);
 $company_locale = nullable_htmlentities($row['company_locale']);
 $company_currency = nullable_htmlentities($row['company_currency']);
+$tax_wording = nullable_htmlentities($row['tax_wording']);
 
 // Get a list of all available timezones
 $timezones = DateTimeZone::listIdentifiers();
@@ -65,6 +66,24 @@ $timezones = DateTimeZone::listIdentifiers();
                         </select>
                     </div>
                 </div>
+
+		<div class="form-group">
+    <label>Tax Wording <strong class="text-danger">*</strong></label>
+
+    <div class="input-group">
+        <div class="input-group-prepend">
+            <span class="input-group-text"><i class="fa fa-fw fa-percent"></i></span>
+        </div>
+
+        <input
+            type="text"
+            class="form-control"
+            name="tax_wording"
+            value="<?php echo htmlspecialchars($tax_wording); ?>"
+            required
+        >
+    </div>
+</div>
 
                 <hr>
 
