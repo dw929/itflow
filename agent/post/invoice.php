@@ -567,6 +567,7 @@ if (isset($_GET['email_invoice'])) {
     $company_email = sanitizeInput($row['company_email']);
     $company_website = sanitizeInput($row['company_website']);
     $company_logo = sanitizeInput($row['company_logo']);
+    $tax_wording = sanitizeInput($row['tax_wording']);
 
     // Sanitize Config vars from get_settings.php
     $config_invoice_from_name = sanitizeInput($config_invoice_from_name);
@@ -831,11 +832,12 @@ if (isset($_GET['export_invoice_pdf'])) {
     $company_website = nullable_htmlentities($row['company_website']);
     $company_tax_id = nullable_htmlentities($row['company_tax_id']);
     if ($config_invoice_show_tax_id && !empty($company_tax_id)) {
-        $company_tax_id_display = "Tax ID: $company_tax_id";
+        $company_tax_id_display = $tax_wording . " ID: $company_tax_id";
     } else {
         $company_tax_id_display = "";
     }
     $company_logo = nullable_htmlentities($row['company_logo']);
+    $tax_wording = nullable_htmlentities($row['tax_wording']);
 
     $sql_payments = mysqli_query($mysqli, "SELECT * FROM payments, accounts WHERE payment_account_id = account_id AND payment_invoice_id = $invoice_id ORDER BY payments.payment_id DESC");
 
@@ -918,7 +920,7 @@ if (isset($_GET['export_invoice_pdf'])) {
         <th align="left" width="40%"><strong>Item</strong></th>
         <th align="center" width="10%"><strong>Qty</strong></th>
         <th align="right" width="15%"><strong>Price</strong></th>
-        <th align="right" width="15%"><strong>Tax</strong></th>
+        <th align="right" width="15%"><strong> . '$tax_wording' . </strong></th>
         <th align="right" width="20%"><strong>Amount</strong></th>
     </tr>';
 
@@ -1041,7 +1043,7 @@ if (isset($_GET['export_invoice_packing_slip'])) {
     $company_email = nullable_htmlentities($row['company_email']);
     $company_website = nullable_htmlentities($row['company_website']);
     $company_logo = nullable_htmlentities($row['company_logo']);
-
+    $tax_wording = nullable_htmlentities($row['tax_wording']);
     require_once("../plugins/TCPDF/tcpdf.php");
 
     // Start TCPDF
