@@ -644,6 +644,7 @@ CREATE TABLE `companies` (
   `company_tax_id` varchar(200) DEFAULT NULL,
   `company_created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `company_updated_at` datetime DEFAULT NULL ON UPDATE current_timestamp(),
+  `tax_wording` varchar(200) DEFAULT 'Tax',
   PRIMARY KEY (`company_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
